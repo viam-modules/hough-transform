@@ -12,9 +12,11 @@ import (
 
 	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/camera"
+	"go.viam.com/rdk/data"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/services/vision"
+	"go.viam.com/rdk/utils"
 	vis "go.viam.com/rdk/vision"
 	"go.viam.com/rdk/vision/classification"
 	objdet "go.viam.com/rdk/vision/objectdetection"
@@ -81,20 +83,28 @@ func (h *myHoughTransformer) DetectionsFromCamera(
 		return nil, err
 	}
 
-	detections, err := h.Detections(ctx, colorImg, map[string]interface{}{"addOffset": true})
-	if err != nil {
-		return nil, err
-	}
-
-	return detections, nil
+	return h.detect(colorImg, true)
 }
 
-func (h *myHoughTransformer) Detections(ctx context.Context, img image.Image, extra map[string]interface{}) ([]objdet.Detection, error) {
+func (h *myHoughTransformer) Detections(
+	ctx context.Context,
+	img *camera.NamedImage,
+	extra map[string]interface{},
+) ([]objdet.Detection, error) {
 	addOffset, ok := extra["addOffset"].(bool)
 	if !ok {
 		return nil, errors.New("we do not know if we should add an offset to the detections, please specify")
 	}
 
+	colorImg, err := img.Image(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return h.detect(colorImg, addOffset)
+}
+
+func (h *myHoughTransformer) detect(img image.Image, addOffset bool) ([]objdet.Detection, error) {
 	circles, err := vesselCircles(img, h.conf, addOffset, false, "")
 	if err != nil {
 		return nil, err
@@ -112,7 +122,7 @@ func (h *myHoughTransformer) ClassificationsFromCamera(
 	return nil, errUnimplemented
 }
 
-func (h *myHoughTransformer) Classifications(ctx context.Context, img image.Image,
+func (h *myHoughTransformer) Classifications(ctx context.Context, img *camera.NamedImage,
 	n int, extra map[string]interface{},
 ) (classification.Classifications, error) {
 	return nil, errUnimplemented
@@ -161,10 +171,19 @@ func (h *myHoughTransformer) CaptureAllFromCamera(
 
 	os.Remove(output)
 
+	namedImg, err := camera.NamedImageFromImage(croppedColorImg, "color", utils.MimeTypeJPEG, data.Annotations{})
+	if err != nil {
+		return viscapture.VisCapture{}, err
+	}
+
 	return viscapture.VisCapture{
-		Image:      croppedColorImg,
+		Image:      &namedImg,
 		Detections: detections,
 	}, nil
+}
+
+func (h *myHoughTransformer) Status(ctx context.Context) (map[string]interface{}, error) {
+	return map[string]interface{}{}, nil
 }
 
 func (h *myHoughTransformer) Close(ctx context.Context) error {
@@ -176,18 +195,17 @@ func (h *myHoughTransformer) DoCommand(ctx context.Context, cmd map[string]inter
 }
 
 func (h *myHoughTransformer) getImage(ctx context.Context) (image.Image, error) {
-	images, _, err := h.cam.Images(ctx)
+	images, _, err := h.cam.Images(ctx, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var colorImg image.Image
 	for _, img := range images {
 		if img.SourceName == "color" {
-			colorImg = img.Image
+			return img.Image(ctx)
 		}
 	}
-	return colorImg, nil
+	return nil, errors.Errorf("camera %q returned no image with source name \"color\"", h.conf.CameraName)
 }
 
 func formatDetections(circles []Circle) []objdet.Detection {
