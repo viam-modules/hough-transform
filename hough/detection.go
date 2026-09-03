@@ -38,36 +38,36 @@ type HoughConfig struct {
 }
 
 // Validate validates the config and returns implicit dependencies,
-func (cfg *HoughConfig) Validate(path string) ([]string, error) {
+func (cfg *HoughConfig) Validate(path string) (requiredDeps, optionalDeps []string, err error) {
 	if cfg.CameraName == "" {
-		return nil, fmt.Errorf(`expected "camera_name" attribute for object tracker %q`, path)
+		return nil, nil, fmt.Errorf(`expected "camera_name" attribute for object tracker %q`, path)
 	}
 
 	if cfg.Dp <= 0 {
-		return nil, fmt.Errorf("dp needs to be set (def 1)")
+		return nil, nil, fmt.Errorf("dp needs to be set (def 1)")
 	}
 
 	if cfg.MinDist <= 0 {
-		return nil, fmt.Errorf("min_dist needs to be set (def 8)")
+		return nil, nil, fmt.Errorf("min_dist needs to be set (def 8)")
 	}
 
 	if cfg.Param1 <= 0 {
-		return nil, fmt.Errorf("param1 needs to be set (def 60)")
+		return nil, nil, fmt.Errorf("param1 needs to be set (def 60)")
 	}
 
 	if cfg.Param2 <= 0 {
-		return nil, fmt.Errorf("param2 needs to be set (def 25)")
+		return nil, nil, fmt.Errorf("param2 needs to be set (def 25)")
 	}
 
 	if cfg.MinRadius <= 0 {
-		return nil, fmt.Errorf("min_radius needs to be set (def 35)")
+		return nil, nil, fmt.Errorf("min_radius needs to be set (def 35)")
 	}
 
 	if cfg.MaxRadius <= 0 {
-		return nil, fmt.Errorf("max_radius needs to be set (def 50)")
+		return nil, nil, fmt.Errorf("max_radius needs to be set (def 50)")
 	}
 
-	return []string{cfg.CameraName}, nil
+	return []string{cfg.CameraName}, nil, nil
 }
 
 func (hc *HoughConfig) setDefaults() {
