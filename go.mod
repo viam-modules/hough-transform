@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/pkg/errors v0.9.1
-	go.viam.com/rdk v1.11.0
+	go.viam.com/rdk v1.12.0
 	go.viam.com/test v1.2.4
 	gocv.io/x/gocv v0.40.0
 )
