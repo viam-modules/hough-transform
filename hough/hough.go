@@ -19,6 +19,7 @@ import (
 	"go.viam.com/rdk/utils"
 	vis "go.viam.com/rdk/vision"
 	"go.viam.com/rdk/vision/classification"
+	"go.viam.com/rdk/vision/detection3d"
 	objdet "go.viam.com/rdk/vision/objectdetection"
 	"go.viam.com/rdk/vision/viscapture"
 )
@@ -133,6 +134,7 @@ func (h *myHoughTransformer) GetProperties(ctx context.Context, extra map[string
 		DetectionSupported:      true,
 		ClassificationSupported: false,
 		ObjectPCDsSupported:     false,
+		Detections3DSupported:   false,
 	}, nil
 }
 func (h *myHoughTransformer) GetObjectPointClouds(
@@ -140,6 +142,14 @@ func (h *myHoughTransformer) GetObjectPointClouds(
 	cameraName string,
 	extra map[string]interface{},
 ) ([]*vis.Object, error) {
+	return nil, errUnimplemented
+}
+
+func (h *myHoughTransformer) GetDetections3D(
+	ctx context.Context,
+	cameraName string,
+	extra map[string]interface{},
+) ([]*detection3d.Detection, error) {
 	return nil, errUnimplemented
 }
 
